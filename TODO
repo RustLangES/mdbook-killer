@@ -5,8 +5,12 @@
   - [ ] Support by folders
 - [ ] Suport serve
 - [ ] Build to static content
+- [ ] Theming Support
+- [ ] Custom index.html
+- [ ] OG Generation
 - [ ] Support for plugins
   - [ ] Use wasm
   - [ ] Provide builtins
     - [ ] Lang system (po and folders)
     - [ ] Generation system
+    - [ ] OG Generation
