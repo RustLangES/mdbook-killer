@@ -1,12 +1,17 @@
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
 
+use crate::commands::Commands;
+
 // Parse commands and arguments from the CLI
 #[derive(Debug, Parser)]
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
     #[clap(flatten)]
     verbose: Verbosity,
+
+    #[clap(subcommand)]
+    pub commands: Commands,
 }
 
 pub fn get_cli() -> Cli {

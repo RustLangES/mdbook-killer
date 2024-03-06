@@ -20,3 +20,4 @@ clap = { version = "4.1.6", features = [
     "suggestions",
     "wrap_help",
 ] }
+clap_complete = "4.5.1"
