@@ -1,0 +1,12 @@
+- [ ] mdBook support
+- [ ] Build from Markdown Files
+- [ ] Support Multilang
+  - [ ] Support po files
+  - [ ] Support by folders
+- [ ] Suport serve
+- [ ] Build to static content
+- [ ] Support for plugins
+  - [ ] Use wasm
+  - [ ] Provide builtins
+    - [ ] Lang system (po and folders)
+    - [ ] Generation system
