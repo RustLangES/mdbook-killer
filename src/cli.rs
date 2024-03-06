@@ -1,39 +1,26 @@
-use anyhow::Result;
 use clap::Parser;
-use inquire::Confirm;
-
-use crate::command::Commands;
+use clap_verbosity_flag::Verbosity;
 
 // Parse commands and arguments from the CLI
 #[derive(Debug, Parser)]
-#[command(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
 pub struct Cli {
-    /// If verbose is set, print extra messages while running.
-    #[arg(short, long)]
-    verbose: Option<bool>,
-
-    #[command(subcommand)]
-    pub command: Commands,
+    #[clap(flatten)]
+    verbose: Verbosity,
 }
 
-impl Cli {
-    pub fn is_verbose_mode(&self) -> bool {
-        match self.verbose {
-            Some(verbose)  => verbose,
-            None => {
-                Confirm::new("Verbosity?")
-                    .with_default(true)
-                    .with_help_message("If set, extra statements will print while running")
-                    .prompt()
-                    .unwrap()
-            },
-        }
-    }
+pub fn get_cli() -> Cli {
+    let cli = Cli::parse();
+    let log_filter = cli.verbose.log_level_filter();
 
-    pub fn execute(&self) -> Result<()> {
-        let verbose = self.is_verbose_mode();
+    // initialize logger
+    env_logger::Builder::new()
+        .default_format()
+        .parse_default_env()
+        .filter_level(log_filter)
+        .init();
 
-        self.command.execute(verbose)
+    log::info!("Initialized Logger with Level: {log_filter:?}");
 
-    }
+    cli
 }

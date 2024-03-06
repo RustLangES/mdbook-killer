@@ -1,21 +1,13 @@
 use anyhow::Result;
 
-use clap::Parser;
-
-pub mod cli;
-pub mod command;
-pub mod commands;
-pub mod models;
-pub mod utils;
-use cli::Cli;
+use mdbook_killer::cli::get_cli;
 
 pub fn main() -> Result<()> {
-    dotenvy::dotenv()?;
-
-    let cli = Cli::parse();
+    let cli = get_cli();
 
     println!("{cli:?}");
 
-    cli.execute()?;
+    // cli.execute()?;
     Ok(())
 }
+
