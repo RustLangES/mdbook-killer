@@ -19,7 +19,7 @@ pub mod rust_config;
 
 /// The overall configuration object for MDBook, essentially an in-memory
 /// representation of `book.toml`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     /// Metadata about the book.
     pub book: BookConfig,
@@ -30,18 +30,6 @@ pub struct Config {
     /// Information about localizations of this book.
     pub language: LanguageConfig,
     pub output: PreprocessorsConfig,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            book: BookConfig::default(),
-            build: BuildConfig::default(),
-            rust: RustConfig::default(),
-            language: LanguageConfig::default(),
-            output: PreprocessorsConfig::default(),
-        }
-    }
 }
 
 impl Config {
@@ -187,7 +175,7 @@ impl Config {
                 .language
                 .clone()
                 .expect("Config has [language] table, but `book.language` not was declared");
-            self.language.0.get(&language_ident).expect(&format!(
+            let _ = self.language.0.get(&language_ident).with_context(|| format!(
                 "Expected [language.{}] to be declared in book.toml",
                 language_ident
             ));
