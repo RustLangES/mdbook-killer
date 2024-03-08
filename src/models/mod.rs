@@ -24,12 +24,12 @@ pub struct Config {
     /// Metadata about the book.
     pub book: BookConfig,
     /// Information about the build environment.
-    pub build: BuildConfig,
+    pub build: Option<BuildConfig>,
     /// Information about Rust language support.
     pub rust: RustConfig,
     /// Information about localizations of this book.
-    pub language: LanguageConfig,
-    pub output: PreprocessorsConfig,
+    pub language: Option<LanguageConfig>,
+    pub output: Option<PreprocessorsConfig>,
 }
 
 impl Config {
@@ -51,8 +51,8 @@ impl Config {
     /// This is for compatibility only. It will be removed completely once the
     /// HTML renderer is refactored to be less coupled to `mdbook` internals.
     #[doc(hidden)]
-    pub fn html_config(&self) -> &HtmlPreprocessor {
-        &self.output.html
+    pub fn html_config(&self) -> HtmlPreprocessor {
+        self.output.clone().unwrap_or_default().html
     }
 
     /// Gets the language configured for a book.
@@ -63,7 +63,13 @@ impl Config {
             Some(ref default) => match index {
                 // Make sure that the language we passed was actually declared
                 // in the config, and return an `Err` if not.
-                Some(lang_ident) => match self.language.0.get(lang_ident.as_ref()) {
+                Some(lang_ident) => match self
+                    .language
+                    .clone()
+                    .unwrap_or_default()
+                    .0
+                    .get(lang_ident.as_ref())
+                {
                     Some(_) => Ok(Some(lang_ident.as_ref().into())),
                     None => Err(anyhow!(
                         "Expected [language.{}] to be declared in book.toml",
@@ -113,6 +119,8 @@ impl Config {
         match language {
             Some(lang_ident) => self
                 .language
+                .clone()
+                .unwrap_or_default()
                 .0
                 .get(&lang_ident)
                 .unwrap()
@@ -130,6 +138,8 @@ impl Config {
         match language {
             Some(lang_ident) => self
                 .language
+                .clone()
+                .unwrap_or_default()
                 .0
                 .get(&lang_ident)
                 .unwrap()
@@ -164,7 +174,7 @@ impl Config {
     /// corresponding to the localizations in the config. If false, src/ is a
     /// single directory containing the summary file and the rest.
     pub fn has_localized_dir_structure(&self) -> bool {
-        !self.language.0.is_empty()
+        !self.language.clone().unwrap_or_default().0.is_empty()
     }
 
     /// Obtains the default language for this config.
@@ -175,14 +185,21 @@ impl Config {
                 .language
                 .clone()
                 .expect("Config has [language] table, but `book.language` not was declared");
-            let _ = self.language.0.get(&language_ident).with_context(|| format!(
-                "Expected [language.{}] to be declared in book.toml",
-                language_ident
-            ));
+            let _ = self
+                .language
+                .clone()
+                .unwrap_or_default()
+                .0
+                .get(&language_ident)
+                .with_context(|| {
+                    format!(
+                        "Expected [language.{}] to be declared in book.toml",
+                        language_ident
+                    )
+                });
             Some(language_ident)
         } else {
             None
         }
     }
 }
-

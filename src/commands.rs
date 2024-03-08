@@ -1,9 +1,13 @@
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use clap::{CommandFactory, Subcommand, ValueHint};
 use clap_complete::{generate_to, Shell};
 
 use crate::cli::Cli;
+use crate::models::Config;
+
+mod init;
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
@@ -108,14 +112,56 @@ pub enum Commands {
 }
 
 impl Commands {
-    pub fn execute(&self) {
+    pub fn execute(&self) -> Result<()> {
         match self {
             Commands::Completions { shell, out_dir } => {
                 let mut cmd = Cli::command_for_update();
                 let name = cmd.get_name().to_string();
                 generate_to(*shell, &mut cmd, name, out_dir).unwrap();
             }
-            _ => {}
+            Commands::Clean { dir, dest_dir } => {
+                let config = Config::from_disk("./book.toml")?;
+                let dir_to_remove = match dest_dir {
+                    Some(dest_dir) => dest_dir.into(),
+                    None => match config.build.as_ref().map(|b| b.build_dir.clone()) {
+                        Some(build_dir) => config.book.src.join(&build_dir),
+                        None => config.book.src.join(&dir),
+                    },
+                };
+
+                if dir_to_remove.exists() {
+                    std::fs::remove_dir_all(&dir_to_remove)
+                        .with_context(|| "Unable to remove the build directory")?;
+                }
+            }
+            Commands::Init { theme, title, dir } => {
+                init::execute(theme.clone(), title.clone(), dir)?
+            }
+            Commands::Build {
+                open,
+                dest_dir,
+                dir,
+            } => {}
+            Commands::Watch {
+                open,
+                dest_dir,
+                dir,
+            } => {}
+            Commands::Serve {
+                open,
+                port,
+                dest_dir,
+                hostname,
+                dir,
+            } => {}
+            Commands::Test {
+                open,
+                chapter,
+                library_path,
+                dir,
+            } => {}
         }
+
+        Ok(())
     }
 }
