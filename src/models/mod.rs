@@ -12,10 +12,13 @@ use self::preprocessors_config::{HtmlPreprocessor, PreprocessorsConfig};
 use self::rust_config::RustConfig;
 
 pub mod build_config;
+mod chapter;
 pub mod config_book;
 pub mod lang_config;
 pub mod preprocessors_config;
 pub mod rust_config;
+
+pub use chapter::Chapter;
 
 /// The overall configuration object for MDBook, essentially an in-memory
 /// representation of `book.toml`.

@@ -1,3 +1,4 @@
+use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
@@ -7,6 +8,7 @@ use clap_complete::{generate_to, Shell};
 use crate::cli::Cli;
 use crate::models::Config;
 
+mod build;
 mod init;
 
 #[derive(Debug, Subcommand)]
@@ -111,8 +113,13 @@ pub enum Commands {
     },
 }
 
+use once_cell::sync::Lazy;
+use tokio::sync::RwLock;
+
+pub static CONFIG: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
+
 impl Commands {
-    pub fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<()> {
         match self {
             Commands::Completions { shell, out_dir } => {
                 let mut cmd = Cli::command_for_update();
@@ -141,7 +148,19 @@ impl Commands {
                 open,
                 dest_dir,
                 dir,
-            } => {}
+            } => {
+                let config = read_to_string("./book.toml").expect("Fallo al abrir el ./book.toml");
+                let config: Config =
+                    toml::from_str(&config).expect("Fallo al parsear el archivo book.toml");
+                println!("Config {:?}", config);
+                let default_language = config
+                    .default_language()
+                    .expect("Debería de haber al menos un idioma configurado por defecto");
+
+                _ = CONFIG.write().await.insert(config);
+
+                build::execute(default_language).await?
+            }
             Commands::Watch {
                 open,
                 dest_dir,
