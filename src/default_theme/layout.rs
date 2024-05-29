@@ -24,6 +24,7 @@ pub fn Layout(
 ) -> impl IntoView {
     let config = block_on(fetch_config());
     let title = config.book.title.unwrap();
+    let title_clone = title.clone();
     let description = config.book.description.unwrap();
 
     view! {
@@ -103,7 +104,7 @@ pub fn Layout(
                 "}
             </script>
         </Head>
-        <Header />
+        <Header title={title_clone} />
         // Async is a component from the async_component module.
         // It will wrap an async function that returns an IntoView.
         <section class="w-full flex flex-col">
@@ -115,7 +116,9 @@ pub fn Layout(
 }
 
 #[component]
-pub fn Header() -> impl IntoView {
+pub fn Header(
+    #[prop(into)] title: String,
+) -> impl IntoView {
     view!{
         <div>
             <nav class="sticky top-0 z-10 flex shadow-md shadow-black p-4 min-h-8 bg-gray-600">
@@ -128,7 +131,7 @@ pub fn Header() -> impl IntoView {
                             <div class="flex-grow-0 shrink-0 basis-auto h-8 mr-2">
                                 <img src="https://jalejotorresm.github.io/rust_book_es/img/ferris.png" alt="My Site Logo" class="max-h-full" />
                             </div>
-                            <b class="flex-1 basis-auto overflow-hidden text-ellipsis whitespace-nowrap">"El Libro de Rust (version Compacta)"</b>
+                            <b class="flex-1 basis-auto overflow-hidden text-ellipsis whitespace-nowrap">{title}</b>
                         </a>
                     </div>
                     <div class="items-center flex flex-1 min-w-0 flex-shrink-0 flex-grow-0 basis-auto justify-end">

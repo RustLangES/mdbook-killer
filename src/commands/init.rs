@@ -29,6 +29,7 @@ pub fn execute(_theme: Option<String>, title: Option<String>, root_path: &PathBu
             description: Some(description.clone()),
             src: "src".into(),
             language: Some(lang.clone()),
+            languages: Some(vec![lang.clone()]),
             text_direction: None,
         },
         language: Some(LanguageConfig(HashMap::from_iter([(

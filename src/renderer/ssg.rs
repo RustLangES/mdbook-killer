@@ -1,4 +1,5 @@
 use std::path::Path;
+use anyhow::anyhow;
 use tokio::fs;
 
 use leptos::{provide_context, IntoView};
@@ -32,7 +33,10 @@ impl<'a> Ssg<'a> {
 
         // Write the string to a file
         let out_file = self.out_dir.join(path);
-        fs::write(&out_file, res).await?;
+        if let Err(error) = fs::write(&out_file, res).await {
+            println!("y si, fallo, que esperabas?, {}", error);
+            Err(error)?;
+        };
         println!("wrote {}", out_file.display());
 
         Ok(())

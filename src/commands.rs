@@ -153,13 +153,14 @@ impl Commands {
                 let config: Config =
                     toml::from_str(&config).expect("Fallo al parsear el archivo book.toml");
                 println!("Config {:?}", config);
+
+                _ = CONFIG.write().await.insert(config.clone());
+
                 let default_language = config
                     .default_language()
                     .expect("Debería de haber al menos un idioma configurado por defecto");
 
-                _ = CONFIG.write().await.insert(config);
-
-                build::execute(default_language).await?
+                build::execute(Some(default_language), config.book.languages).await?
             }
             Commands::Watch {
                 open,

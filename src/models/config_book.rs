@@ -17,6 +17,7 @@ pub struct BookConfig {
     pub src: PathBuf,
     /// The main language of the book.
     pub language: Option<String>,
+    pub languages: Option<Vec<String>>,
     /// The direction of text in the book: Left-to-right (LTR) or Right-to-left (RTL).
     /// When not specified, the text direction is derived from [`BookConfig::language`].
     pub text_direction: Option<TextDirection>,
@@ -29,7 +30,8 @@ impl Default for BookConfig {
             authors: Vec::new(),
             description: None,
             src: PathBuf::from("src"),
-            language: Some(String::from("en")),
+            language: None,
+            languages: Some(vec!["en".to_string(), "es".to_string()]),
             text_direction: None,
         }
     }

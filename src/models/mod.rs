@@ -177,7 +177,11 @@ impl Config {
     /// corresponding to the localizations in the config. If false, src/ is a
     /// single directory containing the summary file and the rest.
     pub fn has_localized_dir_structure(&self) -> bool {
-        !self.language.clone().unwrap_or_default().0.is_empty()
+        if self.language.is_some() {
+            !self.language.clone().unwrap_or_default().0.is_empty()
+        }else {
+            self.book.languages.is_some()
+        }
     }
 
     /// Obtains the default language for this config.
@@ -201,7 +205,11 @@ impl Config {
                     )
                 });
             Some(language_ident)
-        } else {
+        } else if self.book.languages.is_some() {
+            let languages = self.book.languages.clone();
+            let languages = languages.unwrap();
+            languages.first().cloned()
+        }else {
             None
         }
     }
