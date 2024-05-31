@@ -1,3 +1,6 @@
+https://github.com/Phosphorus-M/mdbook-killer/assets/19656993/fa0e8e93-7529-4e0e-9749-539f25b87a55
+> This is a early version of this project
+
 ## Mdbook Killer
 
 Este es un proyecto de experimentación 🔬🧪
