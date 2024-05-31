@@ -1,5 +1,5 @@
 use crate::default_theme::chapterpage::{ChapterPage, ChapterPageProps};
-use crate::default_theme::homepage::Homepage;
+use crate::default_theme::homepage::{Homepage, HomepageProps};
 use crate::models::lang_config::LanguageConfig;
 use crate::models::Chapter;
 use crate::renderer::ssg::Ssg;
@@ -26,12 +26,11 @@ pub async fn execute(default_language: Option<String>, languages: Option<Vec<Str
     }
 
     let ssg = Ssg::new(out);
-    _ = generate_homepage(&ssg).await;
     std::fs::write("./out/book/style.css", CSS_FILE)?;
-
-
+    
+    let mut chapters = Vec::with_capacity(10);
+    
     for lang in languages {
-        let mut chapters = Vec::with_capacity(10);
         let chapter_folder = fs::read_dir(format!("./src/{}", lang))?;
         println!("Reading in {:?}", chapter_folder);
         println!("--------");
@@ -49,29 +48,38 @@ pub async fn execute(default_language: Option<String>, languages: Option<Vec<Str
         }
         let ssg = Ssg::new(out);
 
-        _ = generate_chapters(&ssg, chapters).await;
+        _ = generate_chapters(&ssg, chapters.clone()).await;
     }
+    _ = generate_homepage(&ssg, chapters).await;
 
 
     Ok(())
 }
 
 async fn generate_chapters<'a>(ssg: &Ssg<'a>, chapters: Vec<Chapter>) -> Result<(), Box<dyn std::error::Error>> {
+    let chapters_clone = chapters.clone(); 
     for chapter in chapters {
         let path = chapter.slug.clone().unwrap();
         let path = format!("{path}.html");
-        ssg.gen(path, || {
-            ChapterPage(ChapterPageProps{
-                chapter
-            })
-        }).await?;
+
+        let chapter_prop = Some(chapter.clone());
+        let chapters_prop = chapters_clone.clone(); 
+
+        ssg.gen(path, || Homepage(HomepageProps{
+            chapter:  chapter_prop,
+            chapters: chapters_prop
+        })).await?;
     }
 
     Ok(())
 }
 
-async fn generate_homepage<'a>(ssg: &Ssg<'a>) -> Result<(), Box<dyn std::error::Error>> {
-    ssg.gen("index.html".to_owned(), || Homepage()).await?;
+async fn generate_homepage<'a>(ssg: &Ssg<'a>, chapters: Vec<Chapter>) -> Result<(), Box<dyn std::error::Error>> {
+
+    ssg.gen("index.html".to_owned(), || Homepage(HomepageProps{
+        chapters,
+        chapter: None,
+    })).await?;
 
     Ok(())
 }

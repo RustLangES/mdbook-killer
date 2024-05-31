@@ -2,3 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.markdown-container pre {
+    box-shadow: 0 0 3px 0px black;
+    width: 100%;
+    overflow-x: auto;
+    @apply max-w-[17rem] md:max-w-2xl lg:max-w-5xl;
+}
+
+
+
+/**
+ * Custom code block styles
+ */
+ .language-tag {
+    @apply sr-only;
+  }
+
+ .hh0 {
+    color: #ffd173; /* attribute */
+  }
+  
+  .hh1 {
+    color: #d5ff80; /* constant */
+  }
+  
+  .hh2 {
+    color: #dfbfff; /* built-in function */
+  }
+  
+  .hh3 {
+    color: #ffd173; /* function */
+  }
+  
+  .hh4 {
+    color: #ffad66; /* keyword */
+  }
+  
+  .hh5 {
+    color: #f29e74; /* operator */
+  }
+  
+  .hh6 {
+    color: #5ccfe6; /* property */
+  }
+  
+  .hh7 {
+    color: #cccac2; /* punctuation */
+  }
+  
+  .hh8 {
+    color: #8a9199b3; /* bracket punctuation */
+  }
+  
+  .hh9 {
+    color: #cccac2b3; /* delimiter punctuation */
+  }
+  
+  .hh10 {
+    color: #d5ff80; /* string */
+  }
+  
+  .hh11 {
+    color: #95e6cb; /* special string */
+  }
+  
+  .hh12 {
+    color: #5ccfe6; /* tag */
+  }
+  
+  .hh13 {
+    color: #f29e74; /* type */
+  }
+  
+  .hh14 {
+    color: #dfbfff; /* built-in type */
+  }
+  
+  .hh15 {
+    color: #f29e74; /* variable */
+  }
+  
+  .hh16 {
+    color: #dfbfff; /* built-in variable */
+  }
+  
+  .hh17 {
+    color: #f29e74; /* parameter variable */
+  }
+  
+  .hh18 {
+    color: #5ccfe6; /* comment */
+  }
+  
+  .hh19 {
+    color: #f29e74; /* macro */
+  }
+  
+  .hh20 {
+    color: #f29e74; /* label */
+  }
+

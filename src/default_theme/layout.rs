@@ -20,17 +20,19 @@ async fn fetch_config() -> Config {
 pub fn Layout(
     #[prop(into, default="rustlanges_preview.webp".to_string())] slug: String,
     #[prop(into, default = false)] is_home: bool,
+    #[prop(into, default = false)] wide: bool,
     children: Children,
 ) -> impl IntoView {
     let config = block_on(fetch_config());
     let title = config.book.title.unwrap();
     let title_clone = title.clone();
     let description = config.book.description.unwrap();
+    let description_clone = title.clone();
 
     view! {
         <Html
             attrs=vec![("lang", "es")]
-            class="bg-[#fed7aac9] dark:bg-[#131313]/90 bg-center bg-fixed dark:bg-kaku dark:bri dark:bg-cover dark:bg-blend-darken dark:backdrop-blur-xl overflow-x-hidden dark:text-[#e2cea9]"
+            class="bg-[#fed7aac9] dark:bg-[#131313]/90 bg-center bg-fixed dark:bg-kaku dark:bri dark:bg-cover dark:bg-blend-darken dark:backdrop-blur-xl overflow-x-hidden dark:text-[#e2cea9] min-h-screen"
         />
         <Head>
             <meta charset="utf-8"/>
@@ -104,13 +106,21 @@ pub fn Layout(
                 "}
             </script>
         </Head>
-        <Header title={title_clone} />
+        <Header title={title_clone} description={description_clone} />
         // Async is a component from the async_component module.
         // It will wrap an async function that returns an IntoView.
         <section class="w-full flex flex-col">
 
             // <Async view=navigation_bar />
-            <main class="container mx-auto py-5">{children()}</main>
+            {if wide {
+                view!{
+                    <main class="container mx-auto">{children()}</main>
+                }
+            }else {
+                view!{
+                    <main class="">{children()}</main>
+                }
+            }}
         </section>
     }
 }
@@ -118,6 +128,7 @@ pub fn Layout(
 #[component]
 pub fn Header(
     #[prop(into)] title: String,
+    #[prop(into)] description: String,
 ) -> impl IntoView {
     view!{
         <div>
@@ -131,7 +142,10 @@ pub fn Header(
                             <div class="flex-grow-0 shrink-0 basis-auto h-8 mr-2">
                                 <img src="https://jalejotorresm.github.io/rust_book_es/img/ferris.png" alt="My Site Logo" class="max-h-full" />
                             </div>
-                            <b class="flex-1 basis-auto overflow-hidden text-ellipsis whitespace-nowrap">{title}</b>
+                            <div>
+                                <b class="flex-1 basis-auto overflow-hidden text-ellipsis whitespace-nowrap">{title}</b>
+                                <p class="text-xl mb-2">{description}</p>
+                            </div>
                         </a>
                     </div>
                     <div class="items-center flex flex-1 min-w-0 flex-shrink-0 flex-grow-0 basis-auto justify-end">

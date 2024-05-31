@@ -1,8 +1,12 @@
 use futures::executor::block_on;
 use leptos::{component, view, IntoView};
 use rscx::html;
-use rscx_mdx::mdx::{Mdx, MdxComponentProps};
+// use rscx_mdx::mdx::{Mdx, MdxComponentProps};
 use crate::{models::Chapter, renderer::async_component::Async};
+use pulldown_cmark::{html, Options, Parser};
+use leptos_mdx::mdx::{Components, Mdx, MdxComponentProps};
+use leptos::*;
+
 
 #[component]
 pub fn ChapterPage(
@@ -12,31 +16,25 @@ pub fn ChapterPage(
     let algo = chapter.title;
     let content = chapter.content.clone();
     let content = content.unwrap();
+    let mut components = Components::new();
 
     view!{
-        <div>
-            <h1>{algo}</h1>
-            {
-                view!{
-                    <div>
-                        <Async view={move || generate_view(content.clone())} />
-                    </div>                
-                }
-            }
+        <div class="markdown-container prose dark:prose-invert max-w-none">
+            <MarkdownRender content=content />
         </div>
     }
 
 }
 
-async fn generate_view(content: String) -> impl IntoView {
-    let res = html! {
-        <Mdx source=content handler=handle />
-    };
+
+#[component]
+pub fn MarkdownRender(content: String) -> impl IntoView {
+    let mut components = Components::new();
 
     view! {
-        <div>
-            {res}
-        </div>
+        <>
+            <Mdx source=content components=components/>
+        </>
     }
 }
 
