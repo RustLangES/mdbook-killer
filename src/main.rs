@@ -9,4 +9,3 @@ pub fn main() -> Result<()> {
     cli.commands.execute()?;
     Ok(())
 }
-
