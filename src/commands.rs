@@ -33,7 +33,7 @@ pub enum Commands {
         /// If omitted, mdBook uses build.build-dir from book.toml \
         /// or defaults to `./book`.
         #[clap(long, short, value_hint = ValueHint::DirPath)]
-        dist_dir: Option<PathBuf>,
+        dest_dir: Option<PathBuf>,
         /// Root directory for the book
         #[clap(value_hint = ValueHint::DirPath)]
         dir: PathBuf,
@@ -43,12 +43,11 @@ pub enum Commands {
         /// Root directory for the book
         #[clap(value_hint = ValueHint::DirPath)]
         dir: PathBuf,
-        /// Output directory for the book\n\
         /// Relative paths are interpreted relative to the book's root directory.\n\
         /// If omitted, mdBook uses build.build-dir from book.toml \
         /// or defaults to `./book`.
         #[clap(long, short, value_hint = ValueHint::DirPath)]
-        dist_dir: Option<PathBuf>,
+        dest_dir: Option<PathBuf>,
     },
     /// The completions command is used to generate auto-completions for some common shells
     Completions {
@@ -68,7 +67,7 @@ pub enum Commands {
         /// If omitted, mdBook uses build.build-dir from book.toml \
         /// or defaults to `./book`.
         #[clap(long, short, value_hint = ValueHint::DirPath)]
-        dist_dir: Option<PathBuf>,
+        dest_dir: Option<PathBuf>,
         /// Root directory for the book
         #[clap(value_hint = ValueHint::AnyPath)]
         dir: PathBuf,
@@ -85,7 +84,7 @@ pub enum Commands {
         /// If omitted, mdBook uses build.build-dir from book.toml \
         /// or defaults to `./book`.
         #[clap(long, short, value_hint = ValueHint::DirPath)]
-        dist_dir: Option<PathBuf>,
+        dest_dir: Option<PathBuf>,
         /// Hostname to listen on for HTTP connections
         #[clap(long, short = 'n', default_value = "0.0.0.0", value_hint = ValueHint::Hostname)]
         hostname: Option<String>,
@@ -116,26 +115,26 @@ impl Commands {
                 let name = cmd.get_name().to_string();
                 generate_to(*shell, &mut cmd, name, out_dir).unwrap();
             }
-            Commands::Clean { dir, dist_dir } => {
-                clean::execute(dir.clone(), dist_dir.clone())?;
+            Commands::Clean { dir, dest_dir } => {
+                clean::execute(dir.clone(), dest_dir.clone())?;
             }
             Commands::Init { theme, title, dir } => {
                 init::execute(theme.clone(), title.clone(), dir)?
             }
             Commands::Build {
                 open,
-                dist_dir,
+                dest_dir,
                 dir,
             } => {}
             Commands::Watch {
                 open,
-                dist_dir,
+                dest_dir,
                 dir,
             } => {}
             Commands::Serve {
                 open,
                 port,
-                dist_dir,
+                dest_dir,
                 hostname,
                 dir,
             } => {}
