@@ -20,6 +20,7 @@ async fn fetch_config() -> Config {
 pub fn Layout(
     #[prop(into, default="rustlanges_preview.webp".to_string())] slug: String,
     #[prop(into, default = false)] is_home: bool,
+    #[prop(into, default = "".to_string())] language: String,
     #[prop(into, default = false)] wide: bool,
     children: Children,
 ) -> impl IntoView {
@@ -29,9 +30,15 @@ pub fn Layout(
     let description = config.book.description.unwrap();
     let description_clone = title.clone();
 
+    let language = if language.is_empty() {
+        "en".to_string()
+    } else {
+        language
+    };
+
     view! {
         <Html
-            attrs=vec![("lang", "es")]
+            attrs=vec![("lang", language.as_str())]
             class="bg-[#fed7aac9] dark:bg-[#131313]/90 bg-center bg-fixed dark:bg-kaku dark:bri dark:bg-cover dark:bg-blend-darken dark:backdrop-blur-xl overflow-x-hidden dark:text-[#e2cea9] min-h-screen"
         />
         <Head>
@@ -126,11 +133,8 @@ pub fn Layout(
 }
 
 #[component]
-pub fn Header(
-    #[prop(into)] title: String,
-    #[prop(into)] description: String,
-) -> impl IntoView {
-    view!{
+pub fn Header(#[prop(into)] title: String, #[prop(into)] description: String) -> impl IntoView {
+    view! {
         <div>
             <nav class="sticky top-0 z-10 flex shadow-md shadow-black p-4 min-h-8 bg-gray-600">
                 <div class="flex flex-wrap justify-between w-full">

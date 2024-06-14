@@ -31,7 +31,7 @@ impl Default for BookConfig {
             description: None,
             src: PathBuf::from("src"),
             language: None,
-            languages: Some(vec!["en".to_string(), "es".to_string()]),
+            languages: None,
             text_direction: None,
         }
     }

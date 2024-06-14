@@ -1,8 +1,11 @@
 use futures::executor::block_on;
 use leptos::{component, view, CollectView, IntoView};
 
-use crate::{commands::CONFIG, default_theme::{chapterpage::ChapterPage, layout::Layout}, models::{Chapter, Config}};
-
+use crate::{
+    commands::CONFIG,
+    default_theme::{chapterpage::ChapterPage, layout::Layout},
+    models::{Chapter, Config},
+};
 
 async fn fetch_config() -> Config {
     CONFIG.read().await.clone().unwrap()
@@ -10,12 +13,13 @@ async fn fetch_config() -> Config {
 #[component]
 pub fn Homepage(
     #[prop(optional)] chapter: Option<Chapter>,
-    #[prop()] chapters: Vec<Chapter>
+    #[prop()] chapters: Vec<Chapter>,
+    #[prop()] language: String,
 ) -> impl IntoView {
     let first_chapter = chapters.first().unwrap().clone();
 
     view! {
-        <Layout is_home=true wide=false>
+        <Layout is_home=true wide=false language=language>
             <nav class="dark:bg-[#101010] fixed left-0 min-w-52 border-r border-gray-700 h-full py-2">
                 {
                     chapters.into_iter().map(|chapter| view! {

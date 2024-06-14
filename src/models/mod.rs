@@ -3,6 +3,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context, Result};
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use self::build_config::BuildConfig;
@@ -179,7 +180,7 @@ impl Config {
     pub fn has_localized_dir_structure(&self) -> bool {
         if self.language.is_some() {
             !self.language.clone().unwrap_or_default().0.is_empty()
-        }else {
+        } else {
             self.book.languages.is_some()
         }
     }
@@ -187,11 +188,11 @@ impl Config {
     /// Obtains the default language for this config.
     pub fn default_language(&self) -> Option<String> {
         if self.has_localized_dir_structure() {
-            let language_ident = self
-                .book
-                .language
-                .clone()
-                .expect("Config has [language] table, but `book.language` not was declared");
+            let Some(language_ident) = self.book.language.clone() else {
+                info!("Config has [language] table, but `book.language` not was declared");
+                return None;
+            };
+
             let _ = self
                 .language
                 .clone()
@@ -209,7 +210,7 @@ impl Config {
             let languages = self.book.languages.clone();
             let languages = languages.unwrap();
             languages.first().cloned()
-        }else {
+        } else {
             None
         }
     }

@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct Chapter {
     pub title: String,
     pub content: Option<String>,
-    pub slug: Option<String>
+    pub slug: Option<String>,
 }

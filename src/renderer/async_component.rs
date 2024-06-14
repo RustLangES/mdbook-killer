@@ -21,13 +21,17 @@ where
     // implements the Serializable trait. This works because it will only be rendered on the server
     // and never serialized.
     let once: Resource<(), Wrapper<View>> =
-      create_resource(|| (), move |()| Wrapper::wrap_view(view()));
+        create_resource(|| (), move |()| Wrapper::wrap_view(view()));
 
-    let children = Rc::new(move || {
-        once.get().unwrap()
-    });
+    let children = Rc::new(move || once.get().unwrap());
 
-    Suspense(SuspenseProps::builder().fallback(move || ()).children(children).build()).into_view()
+    Suspense(
+        SuspenseProps::builder()
+            .fallback(move || ())
+            .children(children)
+            .build(),
+    )
+    .into_view()
 }
 
 #[derive(Debug, Clone)]

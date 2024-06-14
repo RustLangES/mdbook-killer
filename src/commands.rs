@@ -156,11 +156,9 @@ impl Commands {
 
                 _ = CONFIG.write().await.insert(config.clone());
 
-                let default_language = config
-                    .default_language()
-                    .expect("Debería de haber al menos un idioma configurado por defecto");
+                let default_language = config.default_language();
 
-                build::execute(Some(default_language), config.book.languages).await?
+                build::execute(default_language, config.book.languages).await?
             }
             Commands::Watch {
                 open,
