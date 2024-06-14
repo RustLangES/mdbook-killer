@@ -6,8 +6,11 @@ use clap_complete::{generate_to, Shell};
 
 use crate::cli::Cli;
 
+use self::serve::ServeConfig;
+
 mod clean;
 mod init;
+mod serve;
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
@@ -108,7 +111,7 @@ pub enum Commands {
 }
 
 impl Commands {
-    pub fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<()> {
         match self {
             Commands::Completions { shell, out_dir } => {
                 let mut cmd = Cli::command_for_update();
@@ -137,7 +140,17 @@ impl Commands {
                 dest_dir,
                 hostname,
                 dir,
-            } => {}
+            } => {
+                let config = ServeConfig {
+                    port: port.to_owned(),
+                    hostname: hostname.to_owned(),
+                    open: open.to_owned(),
+                };
+
+                serve::execute(config)
+                    .await
+                    .expect("ERROR STARTING THE SERVE");
+            }
             Commands::Test {
                 open,
                 chapter,
