@@ -15,9 +15,12 @@ clap-verbosity-flag = "2.2.0"
 serde = { version = "1.0.196", features = ["derive", "serde_derive"] }
 toml = "0.8.10"
 clap = { version = "4.1.6", features = [
-    "derive",
-    "color",
-    "suggestions",
-    "wrap_help",
+  "derive",
+  "color",
+  "suggestions",
+  "wrap_help",
 ] }
 clap_complete = "4.5.1"
+tokio = { version = "1.38.0", features = ["full"] }
+axum = "0.7.5"
+webbrowser = "1.0.1"
