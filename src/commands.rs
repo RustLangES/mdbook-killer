@@ -145,6 +145,7 @@ impl Commands {
                     port: port.to_owned(),
                     hostname: hostname.to_owned(),
                     open: open.to_owned(),
+                    dest_dir: dest_dir.to_owned(),
                 };
 
                 serve::execute(config)
