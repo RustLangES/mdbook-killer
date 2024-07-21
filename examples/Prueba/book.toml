@@ -1,0 +1,14 @@
+[book]
+title = "My awesome book"
+authors = []
+description = "My awesome description"
+src = "src"
+language = "en"
+languages = ["en"]
+
+[rust]
+
+[language.en]
+name = "en"
+title = "My awesome book"
+description = "My awesome description"

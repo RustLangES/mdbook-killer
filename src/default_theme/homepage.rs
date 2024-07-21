@@ -1,15 +1,12 @@
-use futures::executor::block_on;
-use leptos::{component, view, CollectView, IntoView};
+use std::{collections::HashMap, fs::read_to_string};
+
+use leptos::{component, view, IntoView};
 
 use crate::{
-    commands::CONFIG,
-    default_theme::{chapterpage::ChapterPage, layout::Layout},
-    models::{Chapter, Config},
+    default_theme::{chapterpage::ChapterPage, chapters_navigator::ChaptersNavigator, custom_component::CustomComponent, layout::Layout},
+    models::Chapter,
 };
 
-async fn fetch_config() -> Config {
-    CONFIG.read().await.clone().unwrap()
-}
 #[component]
 pub fn Homepage(
     #[prop(optional)] chapter: Option<Chapter>,
@@ -17,23 +14,30 @@ pub fn Homepage(
     #[prop()] language: String,
 ) -> impl IntoView {
     let first_chapter = chapters.first().unwrap().clone();
+    let chapter_body = read_to_string("./theme/chapter_body.html").ok();
 
     view! {
-        <Layout is_home=true wide=false language=language>
-            <nav class="dark:bg-[#101010] fixed left-0 min-w-52 border-r border-gray-700 h-full py-2">
-                {
-                    chapters.into_iter().map(|chapter| view! {
-                        <div class="px-2 py-1">
-                            <a href=format!("/en/{}.html", chapter.slug.unwrap()) >{chapter.title}</a>
+        <Layout is_home=true wide=false language=language.clone()>
+            <ChaptersNavigator chapters=chapters.clone() language=language />
+            {
+                if let Some(chapter_body) = chapter_body {
+                    let props = HashMap::<String, String>::new();
+
+                    view!{
+                        <div>
+                            <CustomComponent props=props content={chapter_body}  />
                         </div>
-                    }).collect_view()
+                    }
+                } else {
+                    view!{
+                        <div class="ml-52 px-6">
+                            <div class="flex w-full flex-row flex-1 items-center mt-6">
+                                <ChapterPage chapter=chapter.unwrap_or(first_chapter) />
+                            </div>
+                        </div>
+                    }
                 }
-            </nav>
-            <div class="ml-52 px-6">
-                <div class="flex w-full flex-row flex-1 items-center mt-6">
-                    <ChapterPage chapter={chapter.unwrap_or(first_chapter)} />
-                </div>
-            </div>
+            }
         </Layout>
     }
 }

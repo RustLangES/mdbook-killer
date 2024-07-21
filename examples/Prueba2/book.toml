@@ -1,0 +1,7 @@
+[book]
+title = "My awesome book"
+authors = []
+description = "My awesome description"
+src = "src"
+
+[rust]

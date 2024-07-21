@@ -39,3 +39,4 @@ pulldown-cmark = "0.11.0"
 
 
 leptos-mdx = { git = "https://github.com/RustLangES/leptos-mdx.git", branch = "leptos-0.6.11" }
+tera = "1.20.0"

@@ -1,4 +1,5 @@
 use crate::default_theme::chapterpage::{ChapterPage, ChapterPageProps};
+use crate::default_theme::custom_component::{CustomComponent, CustomComponentProps};
 use crate::default_theme::homepage::{Homepage, HomepageProps};
 use crate::models::lang_config::LanguageConfig;
 use crate::models::Chapter;
@@ -8,6 +9,7 @@ use leptos::html::AnyElement;
 use leptos::leptos_dom::{ComponentRepr, Element};
 use leptos::ssr::render_to_string;
 use leptos::{component, document, view, Children, HtmlElement, IntoView};
+use std::collections::HashMap;
 use std::fs::{self, read_to_string, ReadDir};
 use std::path::Path;
 
@@ -61,20 +63,12 @@ pub async fn execute(
     Ok(())
 }
 
-#[component]
-pub fn CustomComponent(
-    #[prop(into)] content: String,
-    #[prop(into)] cosa: String
-) -> impl IntoView {
-    let content = content.replace("{cosa}", &cosa);
-    view!{<div inner_html={content}></div>}
-}
-
 async fn generate_chapters<'a>(
     ssg: &Ssg<'a>,
     chapters: Vec<Chapter>,
-    language: String
-, custom_component: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    language: String, 
+    custom_component: Option<String>
+) -> Result<(), Box<dyn std::error::Error>> {
     
 
     let chapters_clone = chapters.clone();
@@ -85,13 +79,22 @@ async fn generate_chapters<'a>(
         let chapter_prop = Some(chapter.clone());
         let chapters_prop = chapters_clone.clone();
         let language_prop = language.clone();
-        // let custom_component = element.clone().unwrap();
+        
+        if let Some(custom_component) = custom_component.clone() {
+            let mut props = HashMap::<String, String>::new();
+            props.insert("cosa".to_string(), "algooo".to_string());
 
-        ssg.gen(path, || Homepage(HomepageProps{
-            chapter:  chapter_prop,
-            chapters: chapters_prop,
-            language: language_prop
-        })).await?;
+            ssg.gen(path, || CustomComponent(CustomComponentProps{
+                content: custom_component,
+                props
+            })).await?;
+        }else {
+            ssg.gen(path, || Homepage(HomepageProps{
+                chapter:  chapter_prop,
+                chapters: chapters_prop,
+                language: language_prop
+            })).await?;
+        }
     }
 
     Ok(())

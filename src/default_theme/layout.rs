@@ -144,7 +144,7 @@ pub fn Header(#[prop(into)] title: String, #[prop(into)] description: String) ->
                         </button>
                         <a class="items-center flex mr-4 min-w-0" href="/rust_book_es/">
                             <div class="flex-grow-0 shrink-0 basis-auto h-8 mr-2">
-                                <img src="https://jalejotorresm.github.io/rust_book_es/img/ferris.png" alt="My Site Logo" class="max-h-full" />
+                                <img src="https://rust-book-es.vercel.app/img/ferris.png" alt="My Site Logo" class="max-h-full" />
                             </div>
                             <div>
                                 <b class="flex-1 basis-auto overflow-hidden text-ellipsis whitespace-nowrap">{title}</b>
@@ -153,7 +153,7 @@ pub fn Header(#[prop(into)] title: String, #[prop(into)] description: String) ->
                         </a>
                     </div>
                     <div class="items-center flex flex-1 min-w-0 flex-shrink-0 flex-grow-0 basis-auto justify-end">
-                        <a href="https://github.com/jalejotorresm/rust_book_es" target="_blank" rel="noopener noreferrer" class="inline-block p-3">
+                        <a href="" target="_blank" rel="noopener noreferrer" class="inline-block p-3">
                             GitHub
                             <svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="ml-1"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg>
                         </a>
