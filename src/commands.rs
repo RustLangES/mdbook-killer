@@ -8,6 +8,7 @@ use crate::cli::Cli;
 
 use self::serve::ServeConfig;
 
+mod build;
 mod clean;
 mod init;
 mod serve;
@@ -27,20 +28,7 @@ pub enum Commands {
         dir: PathBuf,
     },
     /// Builds a book from its markdown files
-    Build {
-        /// Opens the compiled book in a web browser
-        #[clap(long, short)]
-        open: bool,
-        /// Output directory for the book\n\
-        /// Relative paths are interpreted relative to the book's root directory.\n\
-        /// If omitted, mdBook uses build.build-dir from book.toml \
-        /// or defaults to `./book`.
-        #[clap(long, short, value_hint = ValueHint::DirPath)]
-        dest_dir: Option<PathBuf>,
-        /// Root directory for the book
-        #[clap(value_hint = ValueHint::DirPath)]
-        dir: PathBuf,
-    },
+    Build(build::CommandBuild),
     /// Deletes a built book
     Clean {
         /// Root directory for the book
@@ -124,11 +112,9 @@ impl Commands {
             Commands::Init { theme, title, dir } => {
                 init::execute(theme.clone(), title.clone(), dir)?
             }
-            Commands::Build {
-                open,
-                dest_dir,
-                dir,
-            } => {}
+            Commands::Build(cmd) => {
+                build::execute(cmd).await?;
+            }
             Commands::Watch {
                 open,
                 dest_dir,

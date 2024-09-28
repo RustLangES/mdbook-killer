@@ -49,7 +49,7 @@ pub fn execute(_theme: Option<String>, title: Option<String>, root_path: &PathBu
     log::trace!("Book Path with Lang: {lang_path:?}");
     std::fs::create_dir_all(&lang_path)?;
     std::fs::File::create(root_path.join("book.toml"))?
-        .write_all(toml::to_string_pretty(&config).unwrap().as_bytes());
+        .write_all(toml::to_string_pretty(&config).unwrap().as_bytes())?;
     std::fs::File::create(lang_path.join("SUMMARY.md"))?
         .write_all(format!("og_title: {title}\nog_description: {description}\n---",).as_bytes())?;
     std::fs::File::create(lang_path.join("Readme.md"))?
