@@ -1,5 +1,5 @@
 use clap::Parser;
-use clap_verbosity_flag::Verbosity;
+use clap_verbosity_flag::{Verbosity, WarnLevel};
 
 use crate::commands::Commands;
 
@@ -8,7 +8,7 @@ use crate::commands::Commands;
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
     #[clap(flatten)]
-    verbose: Verbosity,
+    verbose: Verbosity<WarnLevel>,
 
     #[clap(subcommand)]
     pub commands: Commands,
