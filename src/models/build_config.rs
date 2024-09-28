@@ -1,6 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use serde::{Serialize, Deserialize};
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
+use tokio::fs;
 
 /// Configuration for the build procedure.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,5 +28,17 @@ impl Default for BuildConfig {
             use_default_preprocessors: true,
             extra_watch_dirs: Vec::new(),
         }
+    }
+}
+
+impl BuildConfig {
+    pub async fn from_path(path: impl AsRef<Path>) -> Result<Self> {
+        let path = path.as_ref();
+
+        let config = fs::read_to_string(path)
+            .await
+            .map_err(|err| anyhow!("Cannot read {path:?}.\n  Cause: {err}"))?;
+
+        Ok(toml::from_str(&config)?)
     }
 }

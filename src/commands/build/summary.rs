@@ -1,9 +1,23 @@
 use std::collections::HashSet;
+use std::io;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
 use tokio::fs;
+
+#[derive(Debug, thiserror::Error)]
+pub enum SummaryError {
+    #[error("{0:?} not found")]
+    NotFound(PathBuf),
+    #[error("Cannot open summary: {0}")]
+    IO(#[from] io::Error),
+    #[error("Cannot open {0}: {1}")]
+    HandledIo(PathBuf, io::Error),
+    #[error("Cannot parse summary: {0}")]
+    Parse(markdown::message::Message),
+    #[error("Summary has no root. Open an issue with all the context")]
+    NoRoot,
+}
 
 #[derive(Clone, Debug)]
 pub struct TreeNode {
@@ -22,18 +36,21 @@ pub struct Summary {
 }
 
 impl Summary {
-    pub async fn from_path(path: PathBuf) -> Result<Self> {
-        let raw = fs::read_to_string(&path)
-            .await
-            .map_err(|err| anyhow!("Cannot read {path:?}.\n  Cause: {err}"))?;
+    pub async fn from_path(path: PathBuf) -> Result<Self, SummaryError> {
+        let raw = match fs::read_to_string(&path).await {
+            Ok(ok) => ok,
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                return Err(SummaryError::NotFound(path));
+            }
+            Err(err) => return Err(SummaryError::HandledIo(path, err)),
+        };
+
         let raw = markdown::to_mdast(&raw, &markdown::ParseOptions::mdx())
-            .map_err(|err| anyhow!("ParseError {err}"))?;
+            .map_err(|err| SummaryError::Parse(err))?;
 
         let mut all_files = HashSet::new();
 
-        let Some((root, list)) = md_to_tree(&raw, &mut all_files) else {
-            return Err(anyhow!("Cannot parse SUMMARY.md"));
-        };
+        let (root, list) = md_to_tree(&raw, &mut all_files)?;
 
         Ok(Self {
             path,
@@ -47,7 +64,7 @@ impl Summary {
 fn md_to_tree(
     node: &markdown::mdast::Node,
     all_files: &mut HashSet<PathBuf>,
-) -> Option<(Vec<TreeNode>, Vec<TreeNode>)> {
+) -> Result<(Vec<TreeNode>, Vec<TreeNode>), SummaryError> {
     use markdown::mdast as ast;
 
     match node {
@@ -57,13 +74,10 @@ fn md_to_tree(
 
             for child in children {
                 match child {
-                    ast::Node::Paragraph(ast::Paragraph { children, .. }) => {
-                        for child in children {
-                            if let Some(a) = md_paragraph_node_to_tree(child, all_files) {
-                                root.push(a);
-                            }
-                        }
-                    }
+                    ast::Node::Paragraph(ast::Paragraph { children, .. }) => children
+                        .into_iter()
+                        .filter_map(|c| md_paragraph_node_to_tree(c, all_files))
+                        .for_each(|c| root.push(c)),
 
                     ast::Node::List(ast::List { children, .. }) => {
                         list = md_list_to_tree(children, all_files)
@@ -75,9 +89,9 @@ fn md_to_tree(
                 }
             }
 
-            Some((root, list))
+            Ok((root, list))
         }
-        _ => None,
+        _ => Err(SummaryError::NoRoot),
     }
 }
 
@@ -103,6 +117,8 @@ fn md_paragraph_node_to_tree(
             ..
         }) => match children.get(0) {
             Some(ast::Node::Text(ast::Text { value: title, .. })) => {
+                // Link can be to external sites, so we check it before add
+                // to files list
                 if !url.starts_with("http") {
                     all_files.insert(
                         PathBuf::from_str(url).expect(&format!("Cannot parse path {url:#?}")),
