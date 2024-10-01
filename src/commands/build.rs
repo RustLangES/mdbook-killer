@@ -1,12 +1,12 @@
 mod collect_summaries;
 use collect_summaries::collect_summaries;
 mod summary;
-pub(super) use summary::{Summary, SummaryError};
+pub(super) use summary::{Summary, SummaryError, SummaryParser};
 
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{Parser, ValueHint};
 use tokio::fs;
 
@@ -55,14 +55,26 @@ pub async fn execute(
 
     let src_dir = dir.join("src");
 
-    let collected_summaries = collect_summaries(src_dir).await?;
+    let collection = collect_summaries(&src_dir).await?;
 
-    if collected_summaries.is_empty() {
+    if collection.summaries.is_empty() {
         eprintln!("No \"SUMMARY.md\", there should be at least one");
         return Ok(());
     }
 
-    println!("Langs: {}", collected_summaries.len());
+    println!("Langs: {}", collection.summaries.len());
+
+    println!("\nChecking files not linked...\n");
+
+    let used_files = &collection.parser.all_files;
+    let all_files = collection.all_files;
+
+    for unused_file in all_files.difference(used_files) {
+        let relative_path = unused_file.strip_prefix(&dir)?;
+        log::warn!("- {}", relative_path.display());
+    }
+
+    for file in used_files {}
 
     Ok(())
 }

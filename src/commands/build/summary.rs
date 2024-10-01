@@ -3,7 +3,10 @@ use std::io;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use markdown::mdast as ast;
 use tokio::fs;
+
+use crate::utils::SafeRemove;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SummaryError {
@@ -29,181 +32,204 @@ pub struct TreeNode {
 
 #[derive(Clone, Debug)]
 pub struct Summary {
-    pub path: PathBuf,
-    pub all_files: HashSet<PathBuf>,
-    pub root: Vec<TreeNode>,
+    pub dir: PathBuf,
     pub list: Vec<TreeNode>,
+    pub root: Vec<TreeNode>,
 }
 
-impl Summary {
-    pub async fn from_path(path: PathBuf) -> Result<Self, SummaryError> {
-        let raw = match fs::read_to_string(&path).await {
+#[derive(Clone, Debug)]
+pub struct SummaryParser<'a> {
+    pub all_files: HashSet<PathBuf>,
+    pub src_path: &'a PathBuf,
+    summary_dir: Option<PathBuf>,
+}
+
+impl<'a> SummaryParser<'a> {
+    pub fn new(src_path: &'a PathBuf) -> Self {
+        Self {
+            src_path,
+            all_files: HashSet::new(),
+            summary_dir: None,
+        }
+    }
+}
+
+impl<'a> SummaryParser<'a> {
+    pub async fn parse_dir(&mut self, dir: &PathBuf) -> Result<Summary, SummaryError> {
+        let sumary_path = dir.join("SUMMARY.md");
+
+        let raw = match fs::read_to_string(&sumary_path).await {
             Ok(ok) => ok,
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
-                return Err(SummaryError::NotFound(path));
+                return Err(SummaryError::NotFound(sumary_path));
             }
-            Err(err) => return Err(SummaryError::HandledIo(path, err)),
+            Err(err) => return Err(SummaryError::HandledIo(sumary_path, err)),
         };
 
         let raw = markdown::to_mdast(&raw, &markdown::ParseOptions::mdx())
             .map_err(|err| SummaryError::Parse(err))?;
 
-        let mut all_files = HashSet::new();
+        self.summary_dir = Some(dir.to_path_buf());
+        let (root, list) = self.parse(raw)?;
+        let dir = self.summary_dir.take().unwrap();
 
-        let (root, list) = md_to_tree(&raw, &mut all_files)?;
-
-        Ok(Self {
-            path,
-            all_files,
-            root,
-            list,
-        })
+        Ok(Summary { dir, list, root })
     }
-}
 
-fn md_to_tree(
-    node: &markdown::mdast::Node,
-    all_files: &mut HashSet<PathBuf>,
-) -> Result<(Vec<TreeNode>, Vec<TreeNode>), SummaryError> {
-    use markdown::mdast as ast;
+    fn parse(&mut self, node: ast::Node) -> Result<(Vec<TreeNode>, Vec<TreeNode>), SummaryError> {
+        match node {
+            ast::Node::Root(root) => self.visit_root(root),
+            _ => Err(SummaryError::NoRoot),
+        }
+    }
 
-    match node {
-        ast::Node::Root(ast::Root { children, .. }) => {
-            let mut root = vec![];
-            let mut list = vec![];
+    fn visit_root(
+        &mut self,
+        root: ast::Root,
+    ) -> Result<(Vec<TreeNode>, Vec<TreeNode>), SummaryError> {
+        let mut root_list = vec![];
+        let mut list = vec![];
 
-            for child in children {
-                match child {
-                    ast::Node::Paragraph(ast::Paragraph { children, .. }) => children
-                        .into_iter()
-                        .filter_map(|c| md_paragraph_node_to_tree(c, all_files))
-                        .for_each(|c| root.push(c)),
+        for child in root.children {
+            match child {
+                ast::Node::Paragraph(paragraph) => self
+                    .visit_paragraph(paragraph)
+                    .into_iter()
+                    .for_each(|child| root_list.push(child)),
 
-                    ast::Node::List(ast::List { children, .. }) => {
-                        list = md_list_to_tree(children, all_files)
-                    }
+                ast::Node::List(list_node) => list = self.visit_list(list_node),
 
-                    e => {
-                        log::warn!("Unexpected: {e:#?}");
-                    }
+                e => {
+                    log::warn!("Unexpected node: {e:#?}");
                 }
             }
-
-            Ok((root, list))
         }
-        _ => Err(SummaryError::NoRoot),
+
+        Ok((root_list, list))
     }
-}
 
-fn md_paragraph_node_to_tree(
-    node: &markdown::mdast::Node,
-    all_files: &mut HashSet<PathBuf>,
-) -> Option<TreeNode> {
-    use markdown::mdast as ast;
+    fn visit_paragraph(&mut self, paragraph: ast::Paragraph) -> Vec<TreeNode> {
+        paragraph
+            .children
+            .into_iter()
+            .filter_map(|node| self.visit_paragraph_child(node))
+            .collect()
+    }
 
-    match node {
-        ast::Node::Text(ast::Text { value: title, .. }) if !title.trim().is_empty() => {
-            Some(TreeNode {
-                title: title.clone(),
-                href: None,
-
-                children: Vec::new(),
-            })
-        }
-        ast::Node::Link(ast::Link {
-            url,
-            children,
-            position,
-            ..
-        }) => match children.get(0) {
-            Some(ast::Node::Text(ast::Text { value: title, .. })) => {
-                // Link can be to external sites, so we check it before add
-                // to files list
-                if !url.starts_with("http") {
-                    all_files.insert(
-                        PathBuf::from_str(url).expect(&format!("Cannot parse path {url:#?}")),
-                    );
-                }
-
+    fn visit_paragraph_child(&mut self, node: ast::Node) -> Option<TreeNode> {
+        match node {
+            ast::Node::Text(ast::Text { value: title, .. }) if !title.trim().is_empty() => {
                 Some(TreeNode {
                     title: title.clone(),
-                    href: Some(url.clone()),
+                    href: None,
 
                     children: Vec::new(),
                 })
             }
-            Some(_) => {
-                if let Some(position) = position {
-                    let line = position.start.line;
-                    let column = position.start.column;
+            ast::Node::Link(ast::Link {
+                url,
+                children,
+                position,
+                ..
+            }) => match children.get(0) {
+                Some(ast::Node::Text(ast::Text { value: title, .. })) => {
+                    // Link can be to external sites, so we check it before add
+                    // to files list
+                    if !url.starts_with("http") {
+                        let path = if url.starts_with("/") {
+                            self.src_path.join(&url[1..])
+                        } else {
+                            self.summary_dir().join(&url)
+                        };
 
-                    log::warn!("Link (at {line}:{column}) has no text child");
-                } else {
-                    log::warn!("Link (at <unknown>) has no text child");
+                        self.all_files.insert(path);
+                    }
+
+                    Some(TreeNode {
+                        title: title.clone(),
+                        href: Some(url.clone()),
+
+                        children: Vec::new(),
+                    })
                 }
+                Some(_) => {
+                    if let Some(position) = position {
+                        let line = position.start.line;
+                        let column = position.start.column;
 
-                None
-            }
-            None => {
-                if let Some(position) = position {
-                    let line = position.start.line;
-                    let column = position.start.column;
+                        log::warn!("Link (at {line}:{column}) has no text child");
+                    } else {
+                        log::warn!("Link (at <unknown>) has no text child");
+                    }
 
-                    log::warn!("Link (at {line}:{column}) has no children");
-                } else {
-                    log::warn!("Link (at <unknown>) has no children");
+                    None
                 }
+                None => {
+                    if let Some(position) = position {
+                        let line = position.start.line;
+                        let column = position.start.column;
 
-                None
-            }
-        },
-        _ => None,
+                        log::warn!("Link (at {line}:{column}) has no children");
+                    } else {
+                        log::warn!("Link (at <unknown>) has no children");
+                    }
+
+                    None
+                }
+            },
+            _ => None,
+        }
     }
-}
 
-fn md_list_to_tree(
-    node: &Vec<markdown::mdast::Node>,
-    all_files: &mut HashSet<PathBuf>,
-) -> Vec<TreeNode> {
-    use markdown::mdast as ast;
+    fn visit_list(&mut self, list: ast::List) -> Vec<TreeNode> {
+        list.children
+            .into_iter()
+            .filter_map(|node| {
+                if let ast::Node::ListItem(list_item) = node {
+                    self.visit_list_item(list_item)
+                } else {
+                    log::warn!("A list must have ListItem as children");
+                    None
+                }
+            })
+            .collect()
+    }
 
-    node.iter()
-        .filter_map(|node| match node {
-            ast::Node::ListItem(ast::ListItem { children, .. }) => {
-                let mut root = match children.get(0) {
-                    Some(ast::Node::Paragraph(ast::Paragraph { children, .. })) => {
-                        md_paragraph_node_to_tree(children.get(0)?, all_files)?
-                    }
+    fn visit_list_item(&mut self, mut list_item: ast::ListItem) -> Option<TreeNode> {
+        // Get the second child first due to `swap_remove` behaviour
+        // that keeps O(1) but break the order of the array
+        let second_child = list_item.children.safe_remove(1);
+        let first_child = list_item.children.safe_remove(0);
 
-                    Some(_) => {
-                        log::warn!("A list item should have a Link or Text as first child");
-                        return None;
-                    }
+        let mut root = if let Some(ast::Node::Paragraph(mut paragraph)) = first_child {
+            paragraph
+                .children
+                .safe_remove(0)
+                .map(|first_child| self.visit_paragraph_child(first_child))
+                .flatten()?
+        } else {
+            log::warn!("A list item should have a Link or Text as first child");
+            return None;
+        };
 
-                    None => unreachable!(),
-                };
+        root.children = second_child.map_or_else(
+            || vec![],
+            |child| {
+                if let ast::Node::List(list) = child {
+                    self.visit_list(list)
+                } else {
+                    log::warn!("A list item may have a List as second child");
+                    vec![]
+                }
+            },
+        );
 
-                let list = match children.get(1) {
-                    Some(ast::Node::List(ast::List { children, .. })) => {
-                        md_list_to_tree(children, all_files)
-                    }
+        Some(root)
+    }
 
-                    Some(_) => {
-                        log::warn!("A list item may have a List as second child");
-                        return None;
-                    }
-
-                    None => vec![],
-                };
-
-                root.children = list;
-
-                Some(root)
-            }
-            _ => {
-                log::warn!("A list must have ListItem as children");
-                None
-            }
-        })
-        .collect()
+    fn summary_dir(&mut self) -> &PathBuf {
+        self.summary_dir
+            .as_ref()
+            .expect("Summary dir is setted before parse")
+    }
 }
